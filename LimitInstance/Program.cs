@@ -3,42 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace LimitInstance
 {
-    class LimitedInstances<T> where T : new()
-    {
-        private readonly Stack<T> stack;
-        private readonly Semaphore semaphore; 
-
-        public LimitedInstances(int limit)
-        {
-            stack = new Stack<T>();
-            semaphore = new Semaphore(limit, limit);
-            for (var i = 0; i < limit; i++)
-            {
-                stack.Push(new T());
-            }
-        }
-        public T GetInstance()
-        {
-            semaphore.WaitOne();
-            var t = stack.Pop();
-            return t;
-        }
-
-        public void ReturnInstance(T t)
-        {
-            stack.Push(t);
-            semaphore.Release();
-        }
-    }
-
     class X
     {
         private static int i;
+        private int instance;
         static X()
         {
             i = 0;
@@ -46,12 +18,12 @@ namespace LimitInstance
 
         public X()
         {
-            i++;
+            instance = i++;
         }
 
         public void Print()
         {
-            Console.WriteLine($"i is {i}");
+            //Console.WriteLine($"instance is {instance}");
         }
     }
     internal class Program
@@ -65,6 +37,7 @@ namespace LimitInstance
         }
         private static void Main(string[] args)
         {
+
             try
             {
                 var random = new Random();
@@ -72,15 +45,18 @@ namespace LimitInstance
                 Parallel.ForEach(GetInts(), i =>
                 {
                     var x = limited.GetInstance();
+                    x.Print();
                     var rnd = random.Next() % 10;
-                    Thread.Sleep(rnd);
+//                    Thread.Sleep(rnd);
+                    limited.ReturnInstance(x);
                 });
+                Console.WriteLine("finished");
             }
             catch (Exception ex)
             {
                 var codeBase = System.Reflection.Assembly.GetExecutingAssembly().CodeBase;
                 var progname = Path.GetFileNameWithoutExtension(codeBase);
-                Console.Error.WriteLine(progname + ": Error: " + ex.Message);
+                Console.Error.WriteLine(progname + ": Error: " + ex.ToString());
             }
 
         }
