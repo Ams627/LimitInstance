@@ -4,20 +4,18 @@
     using System.Collections.Generic;
     using System.Threading;
 
-    class LimitedInstances<T> where T : class, new()
+    class LimitedInstances<T> where T:class
     {
         private readonly Stack<T> stack;
         private readonly Semaphore semaphore;
         private readonly object thisLock = new object();
+        private readonly int limit;
 
         public LimitedInstances(int limit)
         {
+            this.limit = limit;
             stack = new Stack<T>();
-            semaphore = new Semaphore(limit, limit);
-            for (var i = 0; i < limit; i++)
-            {
-                stack.Push(new T());
-            }
+            semaphore = new Semaphore(0, limit);
         }
         public T GetInstance()
         {
@@ -25,25 +23,20 @@
             semaphore.WaitOne();
             lock (thisLock)
             {
-                t = stack.Peek();
-                if (t == null)
-                {
-                    Console.WriteLine($"NULL - stack size was {stack.Count}");
-                }
-                else
-                {
-                    stack.Pop();
-                }
+                t = stack.Pop();
             }
             return t;
         }
 
-        public void ReturnInstance(T t)
+        public void AddInstance(T t)
         {
             lock (thisLock)
             {
-                stack.Push(t);
-                semaphore.Release();
+                if (stack.Count < limit)
+                {
+                    stack.Push(t);
+                    semaphore.Release();
+                }
             }
         }
     }

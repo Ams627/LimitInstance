@@ -11,19 +11,21 @@ namespace LimitInstance
     {
         private static int i;
         private int instance;
+        private string s;
         static X()
         {
             i = 0;
         }
 
-        public X()
+        public X(string s)
         {
+            this.s = s;
             instance = i++;
         }
 
         public void Print()
         {
-            //Console.WriteLine($"instance is {instance}");
+            Console.WriteLine($"instance is {instance}");
         }
     }
     internal class Program
@@ -42,13 +44,16 @@ namespace LimitInstance
             {
                 var random = new Random();
                 var limited = new LimitedInstances<X>(8);
+                for (int i = 0; i < 8; i++)
+                {
+                    limited.AddInstance(new X("hello"));
+                }
                 Parallel.ForEach(GetInts(), i =>
                 {
                     var x = limited.GetInstance();
                     x.Print();
                     var rnd = random.Next() % 10;
-//                    Thread.Sleep(rnd);
-                    limited.ReturnInstance(x);
+                    limited.AddInstance(x);
                 });
                 Console.WriteLine("finished");
             }
